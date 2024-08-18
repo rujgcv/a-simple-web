@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.fufunode.springboot.mapper.BookMapper">
+
+<!--    真的能用-->
+    <select id="selectPage">
+        select b.id,b.name,b.writer,b.create_time,b.img_url,b.description,b.type,ifnull(r.`read`,0) `read`,ifnull(l.`like`,0) `like`,ifnull(g.grade,0) grade
+        from t_book b
+        left join (select book_id,count(`read`) `read` from t_userview where `read` != 0 group by book_id) r
+        on r.book_id = b.id
+        left join (select book_id,count(`like`) `like` from t_userview where `like` != 0 group by book_id) l
+        on l.book_id = b.id
+        left join (select book_id,avg(grade) grade from t_userview where `grade` != 0 group by book_id) g
+        on g.book_id = b.id
+        <where>
+            <if test="name != null and name != ''">
+                and name like concat("%",#{name},"%")
+            </if>
+            <if test="writer != null and writer != ''">
+                and writer like concat("%",#{writer},"%")
+            </if>
+            <if test="type != null and type != ''">
+                and type = #{type}
+            </if>
+        </where>
+        order by
+            <if test="order != null and order != ''">
+                b.create_time ${order}
+            </if>
+    </select>
+
+    <select id="selectTotal">
+        select count(id) from t_book
+        <where>
+            <if test="name != null and name != ''">
+                and name like concat("%",#{name},"%")
+            </if>
+            <if test="writer != null and writer != ''">
+                and writer like concat("%",#{writer},"%")
+            </if>
+            <if test="type != null and type != ''">
+                and type = #{type}
+            </if>
+        </where>
+    </select>
+
+    <delete id="delBookBatch">
+        delete from t_book where id in
+        <foreach collection="ids" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="selectBookInMainPage">
+        select b.id
+        from t_book b
+        left join (select book_id,count(`read`) `read` from t_userview where `read` != 0 group by book_id) r
+        on r.book_id = b.id
+        left join (select book_id,count(`like`) `like` from t_userview where `like` != 0 group by book_id) l
+        on l.book_id = b.id
+        left join (select book_id,avg(grade) grade from t_userview where `grade` != 0 group by book_id) g
+        on g.book_id = b.id
+        <where>
+            <if test="type != null and type != ''">
+                type = #{type}
+            </if>
+        </where>
+        <if test="order != null and order != ''">
+            order by #{order}
+        </if>
+        <if test="size != null and size != ''">
+            limit #{size}
+        </if>
+    </select>
+
+<!--    查询 热门小说 信息(首页)-->
+    <select id="selectPopularBook">
+        select b.id
+        from (select * from t_book) b
+        left join (select book_id,count(`read`) `read` from t_userview where `read` != 0 and create_time between #{startTime} and #{endTime} group by book_id) r
+        on r.book_id = b.id
+        left join (select book_id,count(`like`) `like` from t_userview where `like` != 0 group by book_id) l
+        on l.book_id = b.id
+        left join (select book_id,avg(grade) grade from t_userview where `grade` != 0 group by book_id) g
+        on g.book_id = b.id
+        <where>
+            <if test="type != null and type != ''">
+                type = #{type}
+            </if>
+        </where>
+        order by r.read desc
+        <if test="size != null and size != ''">
+            limit #{size}
+        </if>
+    </select>
+
+    <select id="getBookList">
+        select b.id
+        from (
+            select * from t_book
+            <where>
+                id in
+                <foreach collection="idList" item="id" separator="," open="(" close=")">
+                    #{id}
+                </foreach>
+            </where>
+        ) b
+        left join (select book_id,count(`read`) `read` from t_userview where `read` != 0 group by book_id) r
+        on r.book_id = b.id
+        left join (select book_id,count(`like`) `like` from t_userview where `like` != 0 group by book_id) l
+        on l.book_id = b.id
+        left join (select book_id,avg(grade) grade from t_userview where `grade` != 0 group by book_id) g
+        on g.book_id = b.id
+    </select>
+
+    <select id="selectRankPage">
+        select b.id,b.name,b.writer,b.create_time,b.img_url,b.description,b.type,ifnull(r.`read`,0) `read`,ifnull(g.grade,0) grade
+        from (
+             select *
+             from t_book
+             <where>
+                 <if test="type != null and type != ''">
+                     type = #{type}
+                 </if>
+             </where>
+        ) b
+        left join (
+            select book_id,count(`read`) `read`
+            from t_userview
+            where `read` != 0
+            <if test="startTime != null and startTime != '' and endTime != null and endTime != ''">
+                and create_Time between #{startTime} and #{endTime}
+            </if>
+            group by book_id
+            ) r
+        on r.book_id = b.id
+        left join (select book_id,avg(grade) grade from t_userview where `grade` != 0 group by book_id) g
+        on g.book_id = b.id
+        order by `read` desc
+    </select>
+
+    <select id="selectRankTotal">
+        select count(b.id)
+        from (
+        select *
+        from t_book
+        <where>
+            <if test="type != null and type != ''">
+                type = #{type}
+            </if>
+        </where>
+        ) b
+        left join (
+        select book_id,count(`read`) `read`
+        from t_userview
+        where `read` != 0
+        <if test="startTime != null and startTime != '' and endTime != null and endTime != ''">
+            and create_Time between #{startTime} and #{endTime}
+        </if>
+        group by book_id
+        ) r
+        on r.book_id = b.id
+        left join (select book_id,avg(grade) grade from t_userview where `grade` != 0 group by book_id) g
+        on g.book_id = b.id
+        order by `read` desc
+    </select>
+
+    <select id="findBook">
+        select b.id,b.name,b.writer,b.create_time,b.img_url,b.description,b.type,ifnull(r.`read`,0) `read`,ifnull(l.`like`,0) `like`,ifnull(g.grade,0) grade
+        from (
+            select *
+            from t_book
+            <where>
+                <if test="name != null and name != ''">
+                    name like concat("%",#{name},"%")
+                </if>
+                <if test="writer != null and writer != ''">
+                    or writer like concat("%",#{writer},"%")
+                </if>
+            </where>
+        ) b
+        left join (select book_id,count(`read`) `read` from t_userview where `read` != 0 group by book_id) r
+        on r.book_id = b.id
+        left join (select book_id,count(`like`) `like` from t_userview where `like` != 0 group by book_id) l
+        on l.book_id = b.id
+        left join (select book_id,avg(grade) grade from t_userview where `grade` != 0 group by book_id) g
+        on g.book_id = b.id
+        order by
+        <if test="order != null and order != ''">
+            b.create_time ${order}
+        </if>
+    </select>
+
+    <select id="findBookTotal">
+        select count(b.id)
+        from (
+        select *
+        from t_book
+        <where>
+            <if test="name != null and name != ''">
+                name like concat("%",#{name},"%")
+            </if>
+            <if test="writer != null and writer != ''">
+                or writer like concat("%",#{writer},"%")
+            </if>
+        </where>
+        ) b
+        left join (select book_id,count(`read`) `read` from t_userview where `read` != 0 group by book_id) r
+        on r.book_id = b.id
+        left join (select book_id,count(`like`) `like` from t_userview where `like` != 0 group by book_id) l
+        on l.book_id = b.id
+        left join (select book_id,avg(grade) grade from t_userview where `grade` != 0 group by book_id) g
+        on g.book_id = b.id
+    </select>
+
+    <select id="getAllTxt">
+        select t.id, b.name,b.writer,b.type,u.name `username`,t.create_time,t.url
+        from t_booktxt t
+        join (
+                select name,writer,type,id
+                from t_book
+                <where>
+                    <if test="name != null and name != ''">
+                        and name like concat("%",#{name},"%")
+                    </if>
+                    <if test="writer != null and writer != ''">
+                        and writer like concat("%",#{writer},"%")
+                    </if>
+                    <if test="type != null and type != ''">
+                        and type = #{type}
+                    </if>
+                </where>
+              ) b
+        on t.book_id = b.id
+        join (
+            select name,id from t_user
+        ) u
+        on t.user_id = u.id
+    </select>
+
+    <select id="getAllTxtTotal">
+        select count(t.id)
+        from t_booktxt t
+        join (
+        select name,writer,type,id
+        from t_book
+        <where>
+            <if test="name != null and name != ''">
+                and name like concat("%",#{name},"%")
+            </if>
+            <if test="writer != null and writer != ''">
+                and writer like concat("%",#{writer},"%")
+            </if>
+            <if test="type != null and type != ''">
+                and type = #{type}
+            </if>
+        </where>
+        ) b
+        on t.book_id = b.id
+        join (
+        select name,id from t_user
+        ) u
+        on t.user_id = u.id
+    </select>
+
+    <delete id="delTXTBatch">
+        delete from t_booktxt where id in
+        <foreach collection="ids" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

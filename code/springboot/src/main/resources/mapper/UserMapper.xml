@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.fufunode.springboot.mapper.UserMapper">
+
+    <update id="updateUser">
+        update t_user
+        <set>
+            <if test="name != null">
+                name = #{name},
+            </if>
+            <if test="phone != null">
+                phone=#{phone},
+            </if>
+            <if test="email != null">
+                email=#{email},
+            </if>
+<!--            <if test="avatarUrl != null">-->
+<!--                avatar_url=#{avatarUrl}-->
+<!--            </if>-->
+        </set>
+        where id = #{id}
+    </update>
+
+    <select id="selectPage">
+        select * from t_user
+        <where>
+            is_admin = #{isAdmin}
+            <if test="name != null and name != ''">
+                and name like concat("%",#{name},"%")
+            </if>
+        </where>
+    </select>
+
+    <select id="selectTotal">
+        select count(id) from t_user
+        <where>
+            is_admin = #{isAdmin}
+            <if test="name != null and name != ''">
+                name like concat("%",#{name},"%")
+            </if>
+        </where>
+    </select>
+
+    <delete id="delUserBatch">
+        delete from t_user where id in
+        <foreach collection="ids" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

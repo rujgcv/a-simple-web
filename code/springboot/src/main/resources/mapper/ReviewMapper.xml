@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.fufunode.springboot.mapper.ReviewMapper">
+    <select id="getReviewByBookIdChildren">
+        select *
+        from (
+        select *
+        from t_reviews
+        where is_del = 0
+        and root_id in
+        <foreach collection="ids" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+        ) r
+        left
+        join (select id user_id,name username,avatar_url from t_user) u
+        on r.user_id = u.user_id
+        left join (select id user_id,name parentname from t_user) p
+        on (select user_id from t_reviews where id = r.parent_id) = p.user_id
+        order by create_time asc
+    </select>
+
+    <select id="selectPage">
+        select *
+        from (
+            select *
+            from t_reviews
+            <where>
+                <if test="keyword != null and keyword != ''">
+                    and content like concat("%",#{keyword},"%")
+                </if>
+            </where>
+        ) r
+        left join (select id bid,name bookname from t_book ) b
+        on r.book_id = b.bid
+        left join (select id uid,name username,avatar_url from t_user ) u
+        on r.user_id = u.uid
+        <where>
+            <if test="username != null and username != ''">
+                and u.username like concat("%",#{username},"%")
+            </if>
+            <if test="bookname != null and bookname != ''">
+                and b.bookname like concat("%",#{bookname},"%")
+            </if>
+        </where>
+        order by r.create_time asc
+    </select>
+
+    <select id="selectTotal">
+        select count(id)
+        from (
+        select *
+        from t_reviews
+        <where>
+            <if test="keyword != null and keyword != ''">
+                and content like concat("%",#{keyword},"%")
+            </if>
+        </where>
+        ) r
+        left join (select id bid,name bookname from t_book ) b
+        on r.book_id = b.bid
+        left join (select id uid,name username,avatar_url from t_user ) u
+        on r.user_id = u.uid
+        <where>
+            <if test="username != null and username != ''">
+                and u.username like concat("%",#{username},"%")
+            </if>
+            <if test="bookname != null and bookname != ''">
+                and b.bookname like concat("%",#{bookname},"%")
+            </if>
+        </where>
+    </select>
+
+    <select id="getReviews">
+        select *
+        from t_reviews
+        where id in
+        <foreach collection="ids" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </select>
+
+    <update id="delReviews">
+        update t_reviews
+        set is_del = 1
+        where id in
+        <foreach collection="ids" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <update id="delReviewsByBookId">
+        update t_reviews
+        set is_del = 1
+        where book_id in
+        <foreach collection="ids" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </update>
+</mapper>

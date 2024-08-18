@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.fufunode.springboot.mapper.HomeMapper">
+<!--    <resultMap id="chartDataResult" type="java.util.HashMap">-->
+<!--        <result property="key" column="type" javaType="java.lang.String"/>-->
+<!--        <result property="value" column="number" javaType="java.lang.Integer"/>-->
+<!--    </resultMap>-->
+
+<!--    <select id="getChartData" resultMap="chartDataResult">-->
+<!--        select t.type,ifnull(b.number,0) number-->
+<!--        from t_booktype t-->
+<!--        left join (select type,count(id) number from t_book group by type) b-->
+<!--        on t.type = b.type-->
+<!--    </select>-->
+</mapper>
